@@ -17,6 +17,17 @@ date_range <- seq(start_date,end_date,1)
 wuhan_travel_restrictions <- as.Date("2020-01-23")
 wuhan_travel_time <- as.numeric(wuhan_travel_restrictions - start_date + 1)
 
+# Quarantine start time (calculated after theta is loaded in main script)
+# This will be set in main_model.R after theta is defined
+if(exists("theta") && !is.null(theta[["quarantine_start_date"]])){
+  quarantine_start_date <- as.Date(theta[["quarantine_start_date"]])
+  quarantine_start_time <- as.numeric(quarantine_start_date - start_date + 1)
+}else{
+  # Default value if theta not yet loaded
+  quarantine_start_date <- as.Date("2020-01-23") # default same as travel restrictions
+  quarantine_start_time <- as.numeric(quarantine_start_date - start_date + 1)
+}
+
 fix_r0_tt <- as.numeric(new_date_hubei - start_date + 1) #as.Date("2020-01-25") as.numeric(wuhan_travel_restrictions - start_date + 1) # set noise = 0 after this period of fitting
 
 

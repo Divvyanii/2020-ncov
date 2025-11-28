@@ -1,8 +1,8 @@
 # Process model for simulation --------------------------------------------
 
-process_model <- function(t_start,t_end,dt,theta,simTab,simzetaA,travelF){
+process_model <- function(t_start,t_end,dt,theta,simTab,simzetaA,travelF,quarantineF){
 
-  # simTab <- storeL[,tt-1,]; t_start = 1; t_end = 2; dt = 0.1; simzetaA <- simzeta[1,]; travelF=theta[["travel_frac"]]
+  # simTab <- storeL[,tt-1,]; t_start = 1; t_end = 2; dt = 0.1; simzetaA <- simzeta[1,]; travelF=theta[["travel_frac"]]; quarantineF=0
 
   susceptible_t <- simTab[,"sus"] # input function
   exposed_t1 <- simTab[,"exp1"] # input function
@@ -28,13 +28,19 @@ process_model <- function(t_start,t_end,dt,theta,simTab,simzetaA,travelF){
   rep_rate_local <- theta[["report_local"]]*dt
   rep_rate <- theta[["report"]]*dt
   travel_frac <- travelF
+  quarantine_eff <- quarantineF # quarantine effectiveness (0-1), proportion of infectious effectively isolated
   prob_rep <- exp(-theta[["report"]]*theta[["recover"]]) # probability case is reported rather than recovers
   prob_rep_local <- exp(-theta[["report_local"]]*theta[["recover"]]) # probability case is reported rather than recovers
                                               
   for(ii in seq((t_start+dt),t_end,dt) ){
 
+    # Calculate effective infectious population (reduced by quarantine)
+    effective_inf1 <- infectious_t1 * (1 - quarantine_eff)
+    effective_inf2 <- infectious_t2 * (1 - quarantine_eff)
+    effective_tr_exp2 <- tr_exposed_t2 * (1 - quarantine_eff) # also reduce pre-symptomatic transmission if quarantined
+
     # transitions
-    S_to_E1 <- susceptible_t*(theta[["pre_symp"]]*tr_exposed_t2+infectious_t1+infectious_t2)*inf_rate # stochastic transmission
+    S_to_E1 <- susceptible_t*(theta[["pre_symp"]]*effective_tr_exp2+effective_inf1+effective_inf2)*inf_rate # stochastic transmission with quarantine effect
 
     # Delay until symptoms
     E1_to_E2 <- exposed_t1*inc_rate # as two compartments
@@ -143,9 +149,16 @@ smc_model <- function(theta,nn,dt=1){
 
     # travel restrictions in place?
     if(tt<wuhan_travel_time){travelF <- theta[["travel_frac"]]}else{travelF <- 0}
+    
+    # quarantine measures in place?
+    if(exists("quarantine_start_time") && tt >= quarantine_start_time){
+      quarantineF <- theta[["quarantine_effectiveness"]]
+    }else{
+      quarantineF <- 0
+    }
 
     # run process model
-    storeL[,tt,] <- process_model(tt-1,tt,dt,theta,storeL[,tt-1,],simzeta[tt,],travelF)
+    storeL[,tt,] <- process_model(tt-1,tt,dt,theta,storeL[,tt-1,],simzeta[tt,],travelF,quarantineF)
 
     # calculate weights
     w[,tt] <- AssignWeights(data_list,storeL,nn,theta,tt)

@@ -70,7 +70,9 @@ theta <- c( r0=as.numeric(thetaR_IC[thetaR_IC$param=="r0","value"]), # note this
             travel_frac=NA,
             r0_decline =as.numeric(thetaR_IC[thetaR_IC$param=="r0_decline","value"]), # decline in R0 for scenario analysis
             rep_local_var =as.numeric(thetaR_IC[thetaR_IC$param=="rep_local_var","value"]), # dispersion in local reporting confirmed cases
-            pre_symp =as.numeric(thetaR_IC[thetaR_IC$param=="pre_symp","value"]) # transmission in 2nd half of Erland period (binary term)
+            pre_symp =as.numeric(thetaR_IC[thetaR_IC$param=="pre_symp","value"]), # transmission in 2nd half of Erland period (binary term)
+            quarantine_effectiveness =as.numeric(thetaR_IC[thetaR_IC$param=="quarantine_effectiveness","value"]), # proportion of infectious effectively quarantined (0-1)
+            quarantine_start_date =as.character(thetaR_IC[thetaR_IC$param=="quarantine_start_date","value"]) # date when quarantine measures begin
 )
 
 
@@ -85,6 +87,12 @@ theta_initNames <- c("sus","tr_exp1","tr_exp2","exp1","exp2","inf1","inf2","tr_w
 # Load timeseries -  specify travel data being used
 # NOTE: USES REPORTING DELAY AS INPUT
 source("R/load_timeseries_data.R")
+
+# Update quarantine start time from theta parameter
+if(!is.null(theta[["quarantine_start_date"]])){
+  quarantine_start_date <- as.Date(theta[["quarantine_start_date"]])
+  quarantine_start_time <- as.numeric(quarantine_start_date - start_date + 1)
+}
 
 
 
